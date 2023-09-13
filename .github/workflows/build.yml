@@ -5,11 +5,14 @@ on:
   pull_request:
     branches: [ master ]
   workflow_dispatch:
+permissions: read-all
 jobs:
   cmake-build:
       strategy:
+        fail-fast: false
         matrix:
           os: [ubuntu-latest, windows-latest, macos-latest]
+          cxx_standard: [11, 17, 20]
           build: [static, shared]
           generator: ["Default Generator", "MinGW Makefiles"]
           exclude:
@@ -30,15 +33,16 @@ jobs:
         - name: Get number of CPU cores
           uses: SimenB/github-actions-cpu-cores@v1
 
-        - name: Build
+        - name: Build Tests
           shell: bash
           run: |
-            cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build -DYAML_BUILD_SHARED_LIBS=${{ env.YAML_BUILD_SHARED_LIBS }}
+            cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} -DYAML_BUILD_SHARED_LIBS=${{ env.YAML_BUILD_SHARED_LIBS }} -DYAML_CPP_BUILD_TESTS=ON
             cd build && cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}
 
-        - name: Test
+        - name: Run Tests
           shell: bash
-          run: cd build && ctest --output-on-failure
+          run: |
+            cd build && ctest -C Debug --output-on-failure --verbose
 
   bazel-build:
       strategy:
