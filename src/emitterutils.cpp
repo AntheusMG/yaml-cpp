@@ -218,6 +218,15 @@ bool IsValidLiteralScalar(const std::string& str, FlowType::value flowType,
   });
 }
 
+std::pair<uint8_t, uint8_t> EncodeUTF8SurrogatePair(int codePoint) {
+  const uint32_t leadOffset = 0xD800 - (0x10000 >> 10);
+
+  return {
+      leadOffset | (codePoint >> 10),
+      0xDC00 | (codePoint & 0x3FF),
+  };
+}
+
 std::pair<uint16_t, uint16_t> EncodeUTF16SurrogatePair(int codePoint) {
   const uint32_t leadOffset = 0xD800 - (0x10000 >> 10);
 
